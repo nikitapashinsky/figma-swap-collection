@@ -5,63 +5,85 @@ async function main() {
     const collections =
       await figma.variables.getLocalVariableCollectionsAsync();
 
-    const collection2 = collections[1];
+    const targetCollection = collections[1];
 
-    for (let node of figma.currentPage.selection) {
-      if ("children" in node) {
-        for (let child of node.children) {
-          if (
-            child.type === "RECTANGLE" ||
-            child.type === "TEXT" ||
-            child.type === "FRAME" ||
-            child.type === "VECTOR" ||
-            child.type === "INSTANCE"
-          ) {
-            if (child.fills !== figma.mixed && child.fills.length > 0) {
-              const fillsCopy = clone(child.fills);
+    const selectionColors = figma.getSelectionColors();
+    if (selectionColors) {
+      const paintsArray = selectionColors.paints;
+      const targetVariables = [];
 
-              const currentVariableId = fillsCopy[0].boundVariables.color.id;
+      for (const paint of paintsArray) {
+        if (paint.type === "SOLID" && paint.boundVariables?.color) {
+          console.log(paint);
+          const sourceVariableId = paint.boundVariables.color.id;
+          const sourceVariable =
+            await figma.variables.getVariableByIdAsync(sourceVariableId);
+          const sourceCollectionId = sourceVariable?.variableCollectionId;
+          const sourceCollection =
+            await figma.variables.getVariableCollectionByIdAsync(
+              sourceCollectionId!,
+            );
 
-              const currentVariable =
-                await figma.variables.getVariableByIdAsync(currentVariableId);
+          const sourceVariableIndex = sourceCollection?.variableIds.findIndex(
+            (id) => {
+              return id === sourceVariableId;
+            },
+          );
 
-              const currentCollectionId = currentVariable?.variableCollectionId;
+          const targetCollectionIds = targetCollection.variableIds;
+          const targetVariableId = targetCollectionIds[sourceVariableIndex!];
+          const targetVariable =
+            await figma.variables.getVariableByIdAsync(targetVariableId);
 
-              const currentCollection =
-                await figma.variables.getVariableCollectionByIdAsync(
-                  currentCollectionId!,
-                );
+          if (targetVariable) {
+            targetVariables.push({ sourceVariableId, targetVariable });
+          }
+        }
+      }
 
-              const currentVariableIndex =
-                currentCollection?.variableIds.findIndex((id) => {
-                  return id === currentVariableId;
-                });
+      interface PaintableProperties {
+        fills: Paint[] | PluginAPI["mixed"];
+        strokes: Paint[] | PluginAPI["mixed"];
+        [key: string]: any;
+      }
 
-              console.log(
-                `Input variable at index ${currentVariableIndex} is ${currentVariableId}`,
-              );
+      type PaintableNode = SceneNode & PaintableProperties;
 
-              const targetCollectionIds = collection2.variableIds;
+      interface VariableMapping {
+        sourceVariableId: string;
+        targetVariable: Variable;
+      }
 
-              const targetVariableId =
-                targetCollectionIds[currentVariableIndex!];
-
-              const targetVariable =
-                await figma.variables.getVariableByIdAsync(targetVariableId);
-
-              console.log(
-                `Target variable at index ${currentVariableIndex} is ${targetVariableId}`,
-              );
-
-              fillsCopy[0] = figma.variables.setBoundVariableForPaint(
-                fillsCopy[0],
+      function swapVariables(
+        node: PaintableNode,
+        property: "fills" | "strokes",
+        targetArray: VariableMapping[],
+      ) {
+        const paints = node[property];
+        if (paints !== figma.mixed && paints.length > 0) {
+          const propsCopy = clone(node[property]);
+          for (const { sourceVariableId, targetVariable } of targetArray) {
+            if (propsCopy[0].boundVariables?.color?.id === sourceVariableId) {
+              propsCopy[0] = figma.variables.setBoundVariableForPaint(
+                propsCopy[0],
                 "color",
                 targetVariable,
               );
-              child.fills = fillsCopy;
             }
           }
+          node[property] = propsCopy;
         }
+      }
+      const selectedNode = figma.currentPage.selection[0] as ChildrenMixin &
+        SceneNode;
+      const nodes = selectedNode
+        .findAll()
+        .filter(
+          (node): node is PaintableNode => "fills" in node && "strokes" in node,
+        );
+      for (let node of nodes) {
+        swapVariables(node, "fills", targetVariables);
+        swapVariables(node, "strokes", targetVariables);
       }
     }
     figma.closePlugin();
