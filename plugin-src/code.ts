@@ -5,7 +5,7 @@ async function main() {
     const collections =
       await figma.variables.getLocalVariableCollectionsAsync();
 
-    const targetCollection = collections[1];
+    const targetCollection = collections[0];
 
     const selectionColors = figma.getSelectionColors();
     if (selectionColors) {
@@ -92,4 +92,5 @@ async function main() {
   }
 }
 
-main();
+figma.showUI(__html__, { themeColors: true, width: 240, height: 152 });
+// main();
