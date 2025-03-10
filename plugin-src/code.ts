@@ -45,7 +45,7 @@ async function main() {
       targetArray: VariableMapping[],
     ) {
       const paints = node[property];
-      if (!paints || paints === figma.midex || paints.length === 0) {
+      if (!paints || paints === figma.mixed || paints.length === 0) {
         return;
       }
       if (paints !== figma.mixed && paints.length > 0) {
@@ -71,6 +71,7 @@ async function main() {
       for (let node of nodes) {
         // console.log(node);
         swapVariables(node, "fills", targetVariables as VariableMapping[]);
+        swapVariables(node, "strokes", targetVariables as VariableMapping[]);
       }
     }
 
