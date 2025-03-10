@@ -47,7 +47,6 @@ main {
 
 .Footer {
   padding-top: 40px;
-  padding-bottom: 12px;
   display: flex;
   justify-content: flex-end;
 }
