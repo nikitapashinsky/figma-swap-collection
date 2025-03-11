@@ -1,4 +1,4 @@
-import React, { useRef, useState, forwardRef, useEffect } from "react";
+import React, { useState, forwardRef, useEffect } from "react";
 import "./App.css";
 import { Label, Select } from "radix-ui";
 import {
@@ -6,6 +6,7 @@ import {
   CaretDownIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  TargetIcon,
 } from "@radix-ui/react-icons";
 import classnames from "classnames";
 
@@ -20,44 +21,50 @@ function App() {
   const [targetCollection, setTargetCollection] = useState<Collection | null>(
     null,
   );
-
-  function findNextAvailable(currentName: string) {
-    console.log("Finding next available. Current:", currentName);
-    console.log("Available collections:", collections);
-
-    // Instead of find, let's try filter first to see all available options
-    const available = collections.filter((c) => c.name !== currentName);
-    console.log("Available options:", available);
-
-    return available[0]; // or you could pick a random one
-  }
+  const [availableCollections, setAvailableCollections] = useState<
+    Collection[]
+  >([]);
 
   useEffect(() => {
-    if (collections.length > 0 && !targetCollection) {
-      const firstAvailable = collections.find(
-        (collection) => collection.name !== currentCollectionName,
-      );
-      if (firstAvailable) {
-        setTargetCollection({
-          name: firstAvailable.name,
-          id: firstAvailable.id,
-        });
-      }
+    setAvailableCollections(
+      collections.filter(({ name }) => name !== currentCollectionName),
+    );
+  }, [collections, currentCollectionName]);
+
+  useEffect(() => {
+    // If there are available collections and either:
+    // 1. No target is selected, or
+    // 2. The current target is now the current collection (after swap)
+    if (
+      availableCollections.length > 0 &&
+      (!targetCollection || targetCollection.name === currentCollectionName)
+    ) {
+      // Select the first available collection as the new target
+      setTargetCollection({
+        name: availableCollections[0].name,
+        id: availableCollections[0].id,
+      });
     }
-  }, [collections]);
+  }, [availableCollections, currentCollectionName, targetCollection]);
 
   useEffect(() => {
-    onmessage = (event) => {
+    const messageHandler = (event) => {
       const message = event.data.pluginMessage;
       if (message.type === "COLLECTIONS") {
         setCollections(message.collections);
       } else if (message.type === "CURRENT_COLLECTION_NAME") {
-        if (message.name !== currentCollectionName) {
-          setCurrentCollectionName(message.name);
-        }
+        console.log("Received current collection name:", message.name);
+        setCurrentCollectionName(message.name);
+      } else if (message.type === "NEW_COLLECTION_NAME") {
+        setCurrentCollectionName(message.name);
+        console.log("new current collection: ", message.name);
+        console.log(currentCollectionName);
       }
     };
-  }, [currentCollectionName]);
+
+    window.addEventListener("message", messageHandler);
+    return () => window.removeEventListener("message", messageHandler);
+  }, []);
 
   useEffect(() => {
     parent.postMessage(
@@ -67,11 +74,17 @@ function App() {
   }, [targetCollection]);
 
   function handleClick() {
-    if (targetCollection) {
-      parent.postMessage({ pluginMessage: { type: "SWAP" } }, "*");
-      setCurrentCollectionName(targetCollection.name);
-      setTargetCollection(null);
-    }
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: "SWAP",
+          target: targetCollection,
+        },
+      },
+      "*",
+    );
+    console.log("target: ", targetCollection?.name);
+    setTargetCollection(null);
   }
 
   const SelectItem = forwardRef(
@@ -94,20 +107,13 @@ function App() {
   return (
     <main>
       <div className="form">
-        <Label.Root className="LabelRoot" htmlFor="firstName">
+        <Label.Root className="LabelRoot" htmlFor="to">
           From
         </Label.Root>
-        <Select.Root disabled>
-          <Select.Trigger className="SelectTrigger" aria-label="Food">
-            <Select.Value placeholder={currentCollectionName} />
-            {/* <Select.Icon className="SelectIcon">
-              <CaretDownIcon />
-            </Select.Icon> */}
-          </Select.Trigger>
-        </Select.Root>
+        <div className="collectionName">{currentCollectionName}</div>
       </div>
       <div className="form">
-        <Label.Root className="LabelRoot" htmlFor="firstName">
+        <Label.Root className="LabelRoot" htmlFor="to">
           To
         </Label.Root>
         <Select.Root
@@ -118,6 +124,7 @@ function App() {
             );
             if (selected) {
               setTargetCollection({ name: selected.name, id: selected.id });
+              console.log("selected collection: ", selected.name);
             }
           }}
         >
@@ -134,14 +141,11 @@ function App() {
               </Select.ScrollUpButton>
               <Select.Viewport className="SelectViewport">
                 <Select.Group>
-                  {collections.map(
-                    ({ name }) =>
-                      name !== currentCollectionName && (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
-                      ),
-                  )}
+                  {availableCollections.map(({ name }) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
                 </Select.Group>
               </Select.Viewport>
               <Select.ScrollDownButton className="SelectScrollButton">
