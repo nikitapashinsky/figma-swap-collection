@@ -17,13 +17,16 @@ interface Collection {
 
 function App() {
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [currentCollectionName, setCurrentCollectionName] = useState("");
+  const [currentCollectionName, setCurrentCollectionName] = useState(
+    "No collections found",
+  );
   const [targetCollection, setTargetCollection] = useState<Collection | null>(
     null,
   );
   const [availableCollections, setAvailableCollections] = useState<
     Collection[]
   >([]);
+  const [isEmptySelection, setIsEmptySelection] = useState(true);
 
   useEffect(() => {
     setAvailableCollections(
@@ -55,10 +58,16 @@ function App() {
       } else if (message.type === "CURRENT_COLLECTION_NAME") {
         console.log("Received current collection name:", message.name);
         setCurrentCollectionName(message.name);
+        setIsEmptySelection(false);
       } else if (message.type === "NEW_COLLECTION_NAME") {
         setCurrentCollectionName(message.name);
         console.log("new current collection: ", message.name);
+        setIsEmptySelection(false);
         console.log(currentCollectionName);
+      } else if (message.type === "EMPTY_SELECTION") {
+        console.log("No paints or styles selected");
+        setIsEmptySelection(true);
+        setCurrentCollectionName("No collections found");
       }
     };
 
@@ -74,6 +83,10 @@ function App() {
   }, [targetCollection]);
 
   function handleClick() {
+    if (isEmptySelection) {
+      return;
+    }
+
     parent.postMessage(
       {
         pluginMessage: {
@@ -110,7 +123,9 @@ function App() {
         <Label.Root className="LabelRoot" htmlFor="to">
           From
         </Label.Root>
-        <div className="collectionName">{currentCollectionName}</div>
+        <div className="collectionName" data-empty={isEmptySelection}>
+          {currentCollectionName}
+        </div>
       </div>
       <div className="form">
         <Label.Root className="LabelRoot" htmlFor="to">

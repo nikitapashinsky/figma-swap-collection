@@ -91,6 +91,10 @@ button {
   box-shadow: inset 0 0 0 1px var(--figma-color-border);
   color: var(--figma-color-text);
   user-select: none;
+
+  &[data-empty="true"] {
+    color: var(--figma-color-text-disabled);
+  }
 }
 
 .SelectTrigger {

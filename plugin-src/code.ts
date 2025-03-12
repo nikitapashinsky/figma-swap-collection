@@ -1,3 +1,8 @@
+/*
+	TO DO:
+	- [] Show notification after swap
+*/
+
 import { clone } from "./clone";
 
 async function getCollectionNameFromSelection() {
@@ -207,10 +212,13 @@ figma.showUI(__html__, { themeColors: true, width: 240, height: 152 });
 main();
 
 figma.on("selectionchange", async () => {
-  console.log("asd");
   try {
+    const selection = figma.getSelectionColors();
+    if (selection?.paints.length === 0 || selection?.styles.length === 0) {
+      console.log("No paints or styles selected");
+      figma.ui.postMessage({ type: "EMPTY_SELECTION" });
+    }
     await getCollectionNameFromSelection();
-    console.log("asd?");
   } catch (error) {
     console.error("Error in selection change handler: ", error);
   }
