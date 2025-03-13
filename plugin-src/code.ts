@@ -82,7 +82,7 @@ async function main() {
     // console.log("collections on plugin: ", collections);
     let targetCollection: VariableCollection;
     let targetVariables: VariableMappingUpdated[] = [];
-    let nodes;
+    let allNodes;
 
     interface PaintableProperties {
       fills: Paint[] | PluginAPI["mixed"];
@@ -183,18 +183,38 @@ async function main() {
           await figma.variables.getVariableCollectionByIdAsync(
             targetCollectionId,
           );
-        const selectedNode = figma.currentPage.selection[0] as ChildrenMixin &
-          SceneNode;
-        nodes = selectedNode
-          .findAll()
-          .filter(
-            (node): node is PaintableNode =>
-              "fills" in node && "strokes" in node,
+
+        function isContainerNode(
+          node: SceneNode,
+        ): node is SceneNode & ChildrenMixin {
+          return (
+            "findAll" in node && typeof (node as any).findAll === "function"
           );
+        }
+
+        function isPaintableNode(node: SceneNode): node is PaintableNode {
+          return "fills" in node && "strokes" in node;
+        }
+
+        let nodesToSwap = <PaintableNode[]>[];
+
+        const selection = figma.currentPage.selection;
+
+        if (selection.length > 0) {
+          const selectedNode = selection[0];
+          if (isContainerNode(selectedNode)) {
+            nodesToSwap = selectedNode.findAll().filter(isPaintableNode);
+            if (isPaintableNode(selectedNode)) {
+              nodesToSwap.push(selectedNode);
+            }
+          } else {
+            figma.notify("Please select a frame or group");
+          }
+        }
 
         if (targetCollection && targetVariables.length > 0) {
-          // console.log("perform swap ?");
-          performSwap(nodes);
+          console.log("perform swap ?", allNodes);
+          performSwap(nodesToSwap);
           figma.ui.postMessage({
             type: "NEW_COLLECTION_NAME",
             name: targetCollection.name,
