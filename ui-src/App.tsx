@@ -18,10 +18,10 @@ function App() {
     Collection[]
   >([]);
   const [selectionError, setSelectionError] = useState<
-    false | "EMPTY" | "MULTIPLE"
+    false | "EMPTY" | "MULTIPLE" | "NO_VARIABLES"
   >("EMPTY");
   const [showSelectionError, setShowSelectionError] = useState<
-    false | "EMPTY" | "MULTIPLE"
+    false | "EMPTY" | "MULTIPLE" | "NO_VARIABLES"
   >(false);
 
   useEffect(() => {
@@ -57,8 +57,8 @@ function App() {
           break;
         case "NEW_COLLECTION_NAME":
           setCurrentCollectionName(message.name);
-          setShowSelectionError(false);
           setSelectionError(false);
+          setShowSelectionError(false);
           break;
         case "EMPTY_SELECTION":
           setSelectionError("EMPTY");
@@ -66,6 +66,11 @@ function App() {
           break;
         case "MULTIPLE_SELECTED":
           setSelectionError("MULTIPLE");
+          setShowSelectionError(false);
+          break;
+        case "NO_VARIABLES":
+          setSelectionError("NO_VARIABLES");
+          setShowSelectionError(false);
           break;
       }
     };
@@ -78,12 +83,30 @@ function App() {
     );
   }, [targetCollection]);
 
-  function handleClick() {
-    if (selectionError === "EMPTY") {
-      setShowSelectionError("EMPTY");
-      return;
-    } else if (selectionError === "MULTIPLE") {
-      setShowSelectionError("MULTIPLE");
+  function handleSelectCollection(value: string) {
+    const selected = collections.find(
+      (collection) => collection.name === value,
+    );
+    if (selected) {
+      setTargetCollection({ name: selected.name, id: selected.id });
+    }
+  }
+
+  function handleSwap() {
+    // switch (selectionError) {
+    //   case "EMPTY":
+    //     setShowSelectionError("EMPTY");
+    //     return;
+    //   case "MULTIPLE":
+    //     setShowSelectionError("MULTIPLE");
+    //     return;
+    //   case "NO_VARIABLES":
+    //     setShowSelectionError("NO_VARIABLES");
+    //     return;
+    // }
+
+    if (selectionError) {
+      setShowSelectionError(selectionError);
       return;
     }
 
@@ -123,6 +146,13 @@ function App() {
                 </div>
                 <span>Multiple frames selected</span>
               </>
+            ) : selectionError === "NO_VARIABLES" ? (
+              <>
+                <div className="IconWrapper">
+                  <InfoCircledIcon />
+                </div>
+                <span>No collections in selection</span>
+              </>
             ) : (
               <>
                 <div className="IconWrapper">
@@ -135,6 +165,10 @@ function App() {
         </div>
         {showSelectionError === "EMPTY" ? (
           <strong className="error">Please select a frame.</strong>
+        ) : showSelectionError === "NO_VARIABLES" ? (
+          <strong className="error">
+            Please select a frame containing color variables.
+          </strong>
         ) : showSelectionError === "MULTIPLE" ? (
           <strong className="error">Please select a single frame.</strong>
         ) : null}
@@ -147,14 +181,7 @@ function App() {
               className="RadioGroupRoot"
               aria-label="Select collection"
               value={targetCollection?.name}
-              onValueChange={(event) => {
-                const selected = collections.find(
-                  (collection) => collection.name === event,
-                );
-                if (selected) {
-                  setTargetCollection({ name: selected.name, id: selected.id });
-                }
-              }}
+              onValueChange={handleSelectCollection}
             >
               {availableCollections.map(({ name }) => (
                 <div className="RadioGroupItemWrapper">
@@ -180,7 +207,7 @@ function App() {
         </ScrollArea.Root>
       </form>
       <footer className="footer test">
-        <button onClick={handleClick} className="button">
+        <button onClick={handleSwap} className="button">
           Swap collection
         </button>
       </footer>

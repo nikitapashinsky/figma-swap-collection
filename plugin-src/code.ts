@@ -1,4 +1,81 @@
-import { clone } from "./clone";
+import { clone } from "./utils/clone";
+import { PaintableNode, VariableMapping } from "./types";
+import {
+  hasBoundVariables,
+  isContainerNode,
+  isPaintableNode,
+} from "./utils/helpers";
+
+let targetVariables: VariableMapping[] = [];
+let nodesToSwap = <PaintableNode[]>[];
+
+async function main() {
+  try {
+    const collections =
+      await figma.variables.getLocalVariableCollectionsAsync();
+
+    await getCollectionNameFromSelection();
+
+    figma.ui.postMessage({
+      type: "COLLECTIONS",
+      collections: collections.map((collection) => ({
+        id: collection.id,
+        name: collection.name,
+      })),
+    });
+
+    figma.ui.onmessage = async (message) => {
+      if (message.type === "TARGET_COLLECTION") {
+        await processTargetCollection(message);
+      }
+
+      if (message.type === "SWAP") {
+        const targetCollectionId = message.target?.id;
+        const targetCollection =
+          await figma.variables.getVariableCollectionByIdAsync(
+            targetCollectionId,
+          );
+
+        const currentSelection = figma.currentPage.selection;
+
+        console.log("Target variables before swap: ", targetVariables);
+        console.log("Target collection ID: ", targetCollectionId);
+        console.log("Target collection name: ", message.target?.name);
+
+        if (currentSelection.length > 0) {
+          const selectedNode = currentSelection[0];
+          if (isContainerNode(selectedNode)) {
+            nodesToSwap = selectedNode.findAll().filter(isPaintableNode);
+            if (isPaintableNode(selectedNode)) {
+              nodesToSwap.push(selectedNode);
+            }
+          }
+        }
+
+        if (targetCollection && targetVariables.length > 0) {
+          const currentCollection = await getCollectionNameFromSelection();
+          const currentCollectionName = currentCollection?.name;
+          swapCollection(nodesToSwap);
+
+          figma.ui.postMessage({
+            type: "NEW_COLLECTION_NAME",
+            name: targetCollection.name,
+          });
+
+          figma.notify(
+            `Swapped from ${currentCollectionName} to ${targetCollection.name}`,
+            {
+              timeout: 2000,
+            },
+          );
+          figma.closePlugin();
+        }
+      }
+    };
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 async function getCollectionNameFromSelection() {
   try {
@@ -24,7 +101,6 @@ async function getCollectionNameFromSelection() {
                 type: "CURRENT_COLLECTION_NAME",
                 name: sourceCollection.name,
               });
-              break;
             }
           }
         }
@@ -32,7 +108,7 @@ async function getCollectionNameFromSelection() {
     }
     return sourceCollection;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
@@ -59,185 +135,109 @@ async function getSourceVariables() {
   return sourceVariables;
 }
 
-async function main() {
-  await getCollectionNameFromSelection();
-  try {
-    const collections =
-      await figma.variables.getLocalVariableCollectionsAsync();
-
-    figma.ui.postMessage({
-      type: "COLLECTIONS",
-      collections: collections.map((collection) => ({
-        id: collection.id,
-        name: collection.name,
-      })),
-    });
-
-    let targetVariables: VariableMappingUpdated[] = [];
-
-    interface PaintableProperties {
-      fills: Paint[] | PluginAPI["mixed"];
-      strokes: Paint[] | PluginAPI["mixed"];
-      [key: string]: any;
+function swapVariables(
+  node: PaintableNode,
+  property: "fills" | "strokes",
+  variableMappings: VariableMapping[],
+) {
+  console.log(`Trying to swap ${property} on node ${node.name}`);
+  const paints = node[property];
+  if (paints !== figma.mixed) {
+    if (!paints || paints.length === 0) {
+      return;
     }
+    if (paints.length > 0) {
+      const propsCopy = clone(node[property]);
 
-    type PaintableNode = SceneNode & PaintableProperties;
+      for (let i = 0; i < propsCopy.length; i++) {
+        if (!propsCopy[i] || !propsCopy[i].boundVariables?.color) continue;
 
-    interface VariableMappingUpdated {
-      sourceVariable: Variable;
-      targetVariable: Variable;
-    }
-
-    function swapVariables(
-      node: PaintableNode,
-      property: "fills" | "strokes",
-      variableMappings: VariableMappingUpdated[],
-    ) {
-      const paints = node[property];
-      if (paints !== figma.mixed) {
-        if (!paints || paints.length === 0) {
-          return;
-        }
-        if (paints.length > 0) {
-          const propsCopy = clone(node[property]);
-
-          for (let i = 0; i < propsCopy.length; i++) {
-            if (!propsCopy[i] || !propsCopy[i].boundVariables?.color) continue;
-
-            const boundVariableId = propsCopy[i].boundVariables.color.id;
-            const mapping = variableMappings.find(
-              (m) => m.sourceVariable.id === boundVariableId,
-            );
-
-            if (mapping) {
-              propsCopy[i] = figma.variables.setBoundVariableForPaint(
-                propsCopy[i],
-                "color",
-                mapping.targetVariable,
-              );
-            }
-          }
-          node[property] = propsCopy;
-        }
-      }
-    }
-
-    async function performSwap(nodes: PaintableNode[]) {
-      for (let node of nodes) {
-        swapVariables(
-          node,
-          "fills",
-          targetVariables as VariableMappingUpdated[],
+        const boundVariableId = propsCopy[i].boundVariables.color.id;
+        const mapping = variableMappings.find(
+          (m) => m.sourceVariable.id === boundVariableId,
         );
-        swapVariables(
-          node,
-          "strokes",
-          targetVariables as VariableMappingUpdated[],
-        );
-      }
-    }
 
-    async function processVariables(message: any) {
-      const targetCollectionId = message.value?.id;
-      const targetCollection =
-        await figma.variables.getVariableCollectionByIdAsync(
-          targetCollectionId,
-        );
-      if (targetCollection) {
-        const targetVariablesPromises = targetCollection.variableIds.map((id) =>
-          figma.variables.getVariableByIdAsync(id),
-        );
-        const targetVariablesArray = await Promise.all(targetVariablesPromises);
-        const sourceVariables = await getSourceVariables();
-        targetVariables = [];
-
-        for (const sourceVariable of sourceVariables) {
-          const targetVariable = targetVariablesArray.find(
-            (targetVariable) => targetVariable?.name === sourceVariable.name,
-          );
-          if (targetVariable) {
-            targetVariables.push({ sourceVariable, targetVariable });
-          }
-        }
-      }
-    }
-
-    figma.ui.onmessage = async (message) => {
-      if (message.type === "TARGET_COLLECTION") {
-        await processVariables(message);
-      }
-      if (message.type === "SWAP") {
-        const targetCollectionId = message.target?.id;
-        const targetCollection =
-          await figma.variables.getVariableCollectionByIdAsync(
-            targetCollectionId,
-          );
-
-        function isContainerNode(
-          node: SceneNode,
-        ): node is SceneNode & ChildrenMixin {
-          return (
-            "findAll" in node && typeof (node as any).findAll === "function"
+        if (mapping) {
+          propsCopy[i] = figma.variables.setBoundVariableForPaint(
+            propsCopy[i],
+            "color",
+            mapping.targetVariable,
           );
         }
-
-        function isPaintableNode(node: SceneNode): node is PaintableNode {
-          return "fills" in node && "strokes" in node;
-        }
-
-        let nodesToSwap = <PaintableNode[]>[];
-
-        const selection = figma.currentPage.selection;
-
-        if (selection.length > 0) {
-          const selectedNode = selection[0];
-          if (isContainerNode(selectedNode)) {
-            nodesToSwap = selectedNode.findAll().filter(isPaintableNode);
-            if (isPaintableNode(selectedNode)) {
-              nodesToSwap.push(selectedNode);
-            }
-          }
-        }
-
-        if (targetCollection && targetVariables.length > 0) {
-          performSwap(nodesToSwap);
-          figma.ui.postMessage({
-            type: "NEW_COLLECTION_NAME",
-            name: targetCollection.name,
-          });
-          figma.closePlugin();
-        }
       }
-    };
-  } catch (error) {
-    console.error(error);
+      node[property] = propsCopy;
+    }
   }
 }
 
-figma.showUI(__html__, { themeColors: true, width: 240, height: 384 });
+async function swapCollection(nodes: PaintableNode[]) {
+  for (let node of nodes) {
+    swapVariables(node, "fills", targetVariables as VariableMapping[]);
+    swapVariables(node, "strokes", targetVariables as VariableMapping[]);
+  }
+}
 
-main();
+async function processTargetCollection(message: any) {
+  const targetCollectionId = message.value?.id;
+  const targetCollection =
+    await figma.variables.getVariableCollectionByIdAsync(targetCollectionId);
+  if (targetCollection) {
+    const targetVariablesPromises = targetCollection.variableIds.map((id) =>
+      figma.variables.getVariableByIdAsync(id),
+    );
+    const targetVariablesArray = await Promise.all(targetVariablesPromises);
+    const sourceVariables = await getSourceVariables();
+    targetVariables = [];
+
+    for (const sourceVariable of sourceVariables) {
+      const targetVariable = targetVariablesArray.find(
+        (targetVariable) => targetVariable?.name === sourceVariable.name,
+      );
+      if (targetVariable) {
+        targetVariables.push({ sourceVariable, targetVariable });
+      }
+    }
+  }
+}
 
 figma.on("selectionchange", async () => {
   try {
+    targetVariables = [];
     const selection = figma.currentPage.selection;
 
-    if (selection.length > 1) {
-      figma.ui.postMessage({ type: "MULTIPLE_SELECTED" });
-      return;
-    }
+    if (selection.length > 0) {
+      if (
+        selection.length > 1 ||
+        (selection[0].type === "SECTION" && selection[0].children.length > 1)
+      ) {
+        figma.ui.postMessage({ type: "MULTIPLE_SELECTED" });
+        return;
+      }
+      const selectedNode = selection[0];
+      const hasVariablesOnParent =
+        selectedNode.boundVariables &&
+        (selectedNode.boundVariables.fills !== undefined ||
+          selectedNode.boundVariables.strokes !== undefined);
 
-    if (selection.length === 0) {
+      const hasVariablesOnChildren =
+        "children" in selectedNode
+          ? selectedNode.children.some(hasBoundVariables)
+          : false;
+
+      if (!hasVariablesOnParent && !hasVariablesOnChildren) {
+        figma.ui.postMessage({ type: "NO_VARIABLES" });
+        return;
+      }
+    } else {
       figma.ui.postMessage({ type: "EMPTY_SELECTION" });
       return;
     }
-
-    if (selection[0].type === "SECTION" && selection[0].children.length > 1) {
-      figma.ui.postMessage({ type: "MULTIPLE_SELECTED" });
-    }
-
     await getCollectionNameFromSelection();
   } catch (error) {
     console.error("Error in selection change handler: ", error);
   }
 });
+
+figma.showUI(__html__, { themeColors: true, width: 240, height: 384 });
+console.clear();
+main();

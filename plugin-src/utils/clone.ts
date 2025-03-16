@@ -1,4 +1,4 @@
-export function clone(val) {
+export function clone(val: any): any {
   const type = typeof val;
   if (val === null) {
     return null;
