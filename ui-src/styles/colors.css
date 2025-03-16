@@ -1,0 +1,44 @@
+:root {
+  --ramp-black-100: #0000000d;
+  --ramp-black-200: #0000001a;
+  --ramp-black-300: #00000033;
+  --ramp-black-400: #0000004d;
+  --ramp-black-500: #00000080;
+  --ramp-black-600: #000000cc;
+  --ramp-black-700: #000000d9;
+  --ramp-black-800: #000000e5;
+  --ramp-black-900: #000000f2;
+  --ramp-black-1000: #000000;
+
+  --ramp-grey-100: #f5f5f5;
+  --ramp-grey-200: #e6e6e6;
+  --ramp-grey-300: #d9d9d9;
+  --ramp-grey-400: #b3b3b3;
+  --ramp-grey-500: #757575;
+  --ramp-grey-600: #444444;
+  --ramp-grey-700: #383838;
+  --ramp-grey-800: #2c2c2c;
+  --ramp-grey-900: #1e1e1e;
+  --ramp-grey-1000: #111111;
+
+  --ramp-white-100: #ffffff0d;
+  --ramp-white-200: #ffffff1a;
+  --ramp-white-300: #ffffff33;
+  --ramp-white-400: #ffffff66;
+  --ramp-white-500: #ffffffb2;
+  --ramp-white-600: #ffffffcc;
+  --ramp-white-700: #ffffffd9;
+  --ramp-white-800: #ffffffe5;
+  --ramp-white-900: #fffffff2;
+  --ramp-white-1000: #ffffff;
+}
+
+.figma-light:root {
+  --color-bg-scrollbar: var(--ramp-black-300);
+  --color-bg-scrollbar-hover: var(--ramp-black-400);
+}
+
+.figma-dark:root {
+  --color-bg-scrollbar: var(--ramp-white-400);
+  --color-bg-scrollbar-hover: var(--ramp-white-500);
+}
