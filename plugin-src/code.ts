@@ -94,29 +94,31 @@ async function main() {
       variableMappings: VariableMappingUpdated[],
     ) {
       const paints = node[property];
-      if (!paints || paints.length === 0) {
-        return;
-      }
-      if (paints.length > 0) {
-        const propsCopy = clone(node[property]);
-
-        for (let i = 0; i < propsCopy.length; i++) {
-          if (!propsCopy[i] || !propsCopy[i].boundVariables?.color) continue;
-
-          const boundVariableId = propsCopy[i].boundVariables.color.id;
-          const mapping = variableMappings.find(
-            (m) => m.sourceVariable.id === boundVariableId,
-          );
-
-          if (mapping) {
-            propsCopy[i] = figma.variables.setBoundVariableForPaint(
-              propsCopy[i],
-              "color",
-              mapping.targetVariable,
-            );
-          }
+      if (paints !== figma.mixed) {
+        if (!paints || paints.length === 0) {
+          return;
         }
-        node[property] = propsCopy;
+        if (paints.length > 0) {
+          const propsCopy = clone(node[property]);
+
+          for (let i = 0; i < propsCopy.length; i++) {
+            if (!propsCopy[i] || !propsCopy[i].boundVariables?.color) continue;
+
+            const boundVariableId = propsCopy[i].boundVariables.color.id;
+            const mapping = variableMappings.find(
+              (m) => m.sourceVariable.id === boundVariableId,
+            );
+
+            if (mapping) {
+              propsCopy[i] = figma.variables.setBoundVariableForPaint(
+                propsCopy[i],
+                "color",
+                mapping.targetVariable,
+              );
+            }
+          }
+          node[property] = propsCopy;
+        }
       }
     }
 
