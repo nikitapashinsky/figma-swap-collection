@@ -1,6 +1,9 @@
+@import "styles/reset.css";
+@import "styles/colors.css";
+
 * {
-  margin: 0;
-  padding: 0;
+  font-size: 11px;
+  line-height: 16px;
 }
 
 :root {
@@ -14,13 +17,12 @@
 }
 
 main {
-  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  height: 100%;
 }
 
-.Button {
+.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -35,173 +37,202 @@ main {
   background-color: var(--figma-color-bg-brand);
 }
 
-.Button:focus-visible {
+.button:focus-visible {
   box-shadow:
     inset 0 0 0 1px var(--figma-color-border-selected),
     inset 0 0 0 2px var(--figma-color-border-onbrand-strong);
 }
 
-.figma-dark .Button:focus-visible {
+.figma-dark .button:focus-visible {
   box-shadow:
     inset 0 0 0 1px var(--figma-color-border-selected),
     inset 0 0 0 2px #1e1e1e;
 }
 
-.Button:active {
+.button:active {
   background-color: var(--figma-color-bg-brand-pressed);
 }
 
-.Footer {
-  padding-top: 40px;
+.footer {
+  padding: 12px;
   display: flex;
   justify-content: flex-end;
+  /* flex: 1; */
+  box-shadow: inset 0 1px 0 0 var(--figma-color-border);
 }
 
-/* reset */
-button {
-  all: unset;
-}
-
-.form {
+.section {
   display: flex;
-  justify-content: space-between;
-  gap: 24px;
+  flex-direction: column;
+  padding-bottom: 8px;
 }
 
-.LabelRoot {
-  font-size: 11px;
-  line-height: 24px;
-  color: var(--figma-color-text-secondary);
-}
-
-.collectionName {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 5px;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 8px;
-  padding-right: 4px;
-  font-size: 11px;
-  line-height: 1;
-  width: 120px;
-  height: 24px;
-  gap: 5px;
-  background-color: var(--figma-color-bg-primary);
-  box-shadow: inset 0 0 0 1px var(--figma-color-border);
+.label {
+  display: flex;
+  gap: 8px;
   color: var(--figma-color-text);
-  user-select: none;
+  font-size: 11px;
+  font-variation-settings: "wght" 550;
+  padding: 12px;
+  z-index: 10;
 
-  &[data-empty="true"] {
-    color: var(--figma-color-text-disabled);
+  &:has(+ .ScrollAreaRoot) {
+    box-shadow: 0 1px 0 0 var(--figma-color-border);
   }
 }
 
-.SelectTrigger {
-  display: inline-flex;
-  /* flex-grow: 1; */
+.collectionNameWrapper {
+  padding: 4px 12px;
+}
+
+.collectionName {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
   border-radius: 5px;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 8px;
-  padding-right: 4px;
+  padding: 4px 8px;
   font-size: 11px;
-  line-height: 1;
-  width: 120px;
-  height: 24px;
-  gap: 5px;
-  background-color: var(--figma-color-bg-primary);
-  box-shadow: inset 0 0 0 1px var(--figma-color-border);
+  line-height: 16px;
+  gap: 8px;
+  background-color: var(--figma-color-bg-secondary);
   color: var(--figma-color-text);
-}
-.SelectTrigger:hover {
-  /* background-color: var(--mauve-3); */
-}
-.SelectTrigger:focus {
-  box-shadow: inset 0 0 0 1px var(--figma-color-border-selected);
-}
-.SelectTrigger[data-placeholder] {
-  /* color: var(--violet-9); */
-}
-
-.SelectIcon {
-  /* color: Var(--violet-11); */
-}
-
-.SelectContent {
-  overflow: hidden;
-  background: #1e1e1e;
-  border-radius: 13px;
-  /* padding: 8px; */
-  box-shadow: var(--elevation-400-menu-panel);
-}
-
-.figma-dark .SelectContent {
-  background: #1e1e1e;
-}
-
-.SelectViewport {
-  max-height: 96px;
-  padding: 8px;
-}
-
-.SelectItem {
-  font-size: 12px;
-  line-height: 1;
-  color: var(--figma-color-text-oninverse);
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 35px 0 25px;
-  position: relative;
   user-select: none;
+
+  &[data-invalid="true"] {
+    background-color: var(--figma-color-bg);
+    box-shadow: inset 0 0 0 1px var(--figma-color-border);
+    color: var(--figma-color-text-secondary);
+  }
 }
 
-.figma-dark .SelectItem {
-  color: var(--figma-color-text);
+.error {
+  color: var(--figma-color-text-danger);
+  padding: 8px 12px 4px 12px;
 }
 
-.SelectItem[data-disabled] {
-  color: var(--mauve-8);
-  pointer-events: none;
-}
-.SelectItem[data-highlighted] {
-  outline: none;
-  background-color: var(--figma-color-bg-brand);
-  color: var(--figma-color-text-onbrand);
+.collections-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
 }
 
-.SelectLabel {
-  padding: 0 25px;
-  font-size: 12px;
-  line-height: 25px;
-  color: var(--mauve-11);
+.ScrollAreaRoot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.SelectSeparator {
-  height: 1px;
-  background-color: var(--violet-6);
-  margin: 5px;
+.ScrollAreaViewport {
+  height: 100%;
+  width: 100%;
 }
 
-.SelectItemIndicator {
+.ScrollAreaScrollbar {
+  display: flex;
+  /* ensures no selection */
+  user-select: none;
+  /* disable browser handling of all panning and zooming gestures on touch devices */
+  touch-action: none;
+  padding: 4px;
+}
+
+.ScrollAreaScrollbar[data-orientation="vertical"] {
+  width: 12px;
+}
+
+.ScrollAreaThumb {
+  flex: 1;
+  background: var(--color-bg-scrollbar);
+  border-radius: 8px;
+  position: relative;
+
+  &:hover {
+    background: var(--color-bg-scrollbar-hover);
+  }
+}
+/* increase target size for touch devices https://www.w3.org/WAI/WCAG21/Understanding/target-size.html */
+.ScrollAreaThumb::before {
+  content: "";
   position: absolute;
-  left: 0;
-  width: 25px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  min-width: 44px;
+  min-height: 44px;
 }
 
-.SelectScrollButton {
+.RadioGroupRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+}
+
+.RadioGroupItemWrapper {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--figma-color-text);
+
+  &:has(:focus-visible) {
+    box-shadow: inset 0 0 0 1px var(--figma-color-border-selected);
+  }
+
+  &:has([data-state="checked"]) {
+    font-variation-settings: "wght" 550;
+    background-color: var(--figma-color-bg-brand-tertiary);
+  }
+
+  &:has([data-disabled]) {
+    color: var(--figma-color-text-disabled);
+
+    &:has([data-state="checked"]) {
+      background-color: var(--figma-color-bg-secondary);
+    }
+
+    & svg {
+      color: var(--figma-color-text-disabled);
+    }
+  }
+
+  &:hover:not(:has([data-state="checked"])) {
+    background-color: var(--figma-color-bg-secondary);
+    &:has([data-disabled]) {
+      background-color: var(--figma-color-bg);
+    }
+  }
+}
+
+.RadioGroupItem {
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 24px;
-  /* background-color: var(--figma-color-bg-danger); */
-  color: var(--figma-color-text-oninverse);
-  cursor: default;
+}
+
+.RadioGroupItemLabel {
+  display: flex;
+  flex: 1;
+  padding: 4px 4px 4px 8px;
+}
+
+.RadioGroupItemIndicator {
+  color: var(--figma-color-text-brand);
+}
+
+.IconWrapper {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

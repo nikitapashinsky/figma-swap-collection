@@ -1,8 +1,3 @@
-/*
-	TO DO:
-	- [] Show notification after swap
-*/
-
 import { clone } from "./clone";
 
 async function getCollectionNameFromSelection() {
@@ -25,7 +20,6 @@ async function getCollectionNameFromSelection() {
               );
 
             if (sourceCollection) {
-              console.log("GOT SOURCE COLLECTION: ", sourceCollection.name);
               figma.ui.postMessage({
                 type: "CURRENT_COLLECTION_NAME",
                 name: sourceCollection.name,
@@ -79,10 +73,7 @@ async function main() {
       })),
     });
 
-    // console.log("collections on plugin: ", collections);
-    let targetCollection: VariableCollection;
     let targetVariables: VariableMappingUpdated[] = [];
-    let allNodes;
 
     interface PaintableProperties {
       fills: Paint[] | PluginAPI["mixed"];
@@ -102,12 +93,11 @@ async function main() {
       property: "fills" | "strokes",
       variableMappings: VariableMappingUpdated[],
     ) {
-      // const selectionColors = figma.getSelectionColors();
       const paints = node[property];
-      if (!paints || paints === figma.mixed || paints.length === 0) {
+      if (!paints || paints.length === 0) {
         return;
       }
-      if (paints !== figma.mixed && paints.length > 0) {
+      if (paints.length > 0) {
         const propsCopy = clone(node[property]);
 
         for (let i = 0; i < propsCopy.length; i++) {
@@ -130,7 +120,7 @@ async function main() {
       }
     }
 
-    function performSwap(nodes: PaintableNode[]) {
+    async function performSwap(nodes: PaintableNode[]) {
       for (let node of nodes) {
         swapVariables(
           node,
@@ -145,14 +135,13 @@ async function main() {
       }
     }
 
-    async function processVariables(message) {
+    async function processVariables(message: any) {
       const targetCollectionId = message.value?.id;
       const targetCollection =
         await figma.variables.getVariableCollectionByIdAsync(
           targetCollectionId,
         );
       if (targetCollection) {
-        // console.log("GOT TARGET COLLECTION: ", targetCollection.name);
         const targetVariablesPromises = targetCollection.variableIds.map((id) =>
           figma.variables.getVariableByIdAsync(id),
         );
@@ -176,9 +165,7 @@ async function main() {
         await processVariables(message);
       }
       if (message.type === "SWAP") {
-        // console.log("Swapping");
         const targetCollectionId = message.target?.id;
-        // console.log("target collection id: ", targetCollectionId);
         const targetCollection =
           await figma.variables.getVariableCollectionByIdAsync(
             targetCollectionId,
@@ -207,18 +194,16 @@ async function main() {
             if (isPaintableNode(selectedNode)) {
               nodesToSwap.push(selectedNode);
             }
-          } else {
-            figma.notify("Please select a frame or group");
           }
         }
 
         if (targetCollection && targetVariables.length > 0) {
-          console.log("perform swap ?", allNodes);
           performSwap(nodesToSwap);
           figma.ui.postMessage({
             type: "NEW_COLLECTION_NAME",
             name: targetCollection.name,
           });
+          figma.closePlugin();
         }
       }
     };
@@ -227,17 +212,28 @@ async function main() {
   }
 }
 
-figma.showUI(__html__, { themeColors: true, width: 240, height: 152 });
+figma.showUI(__html__, { themeColors: true, width: 240, height: 384 });
 
 main();
 
 figma.on("selectionchange", async () => {
   try {
-    const selection = figma.getSelectionColors();
-    if (selection?.paints.length === 0 || selection?.styles.length === 0) {
-      console.log("No paints or styles selected");
-      figma.ui.postMessage({ type: "EMPTY_SELECTION" });
+    const selection = figma.currentPage.selection;
+
+    if (selection.length > 1) {
+      figma.ui.postMessage({ type: "MULTIPLE_SELECTED" });
+      return;
     }
+
+    if (selection.length === 0) {
+      figma.ui.postMessage({ type: "EMPTY_SELECTION" });
+      return;
+    }
+
+    if (selection[0].type === "SECTION" && selection[0].children.length > 1) {
+      figma.ui.postMessage({ type: "MULTIPLE_SELECTED" });
+    }
+
     await getCollectionNameFromSelection();
   } catch (error) {
     console.error("Error in selection change handler: ", error);
