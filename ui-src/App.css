@@ -104,6 +104,10 @@ main {
     box-shadow: inset 0 0 0 1px var(--figma-color-border);
     color: var(--figma-color-text-secondary);
   }
+
+  &[data-error="true"] {
+    box-shadow: inset 0 0 0 1px var(--figma-color-border-danger-strong);
+  }
 }
 
 .errorWrapper {

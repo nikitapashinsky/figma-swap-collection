@@ -118,7 +118,7 @@ function App() {
         <div className="collectionNameWrapper">
           <div
             className="collectionName"
-            data-invalid={selectionError}
+            data-invalid={selectionError !== false}
             data-error={showSelectionError ? "true" : "false"}
           >
             {selectionError === "EMPTY" ? (

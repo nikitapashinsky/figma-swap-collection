@@ -10,6 +10,7 @@ let targetVariables: VariableMapping[] = [];
 let nodesToSwap = <PaintableNode[]>[];
 
 async function main() {
+  console.clear();
   try {
     const collections =
       await figma.variables.getLocalVariableCollectionsAsync();
@@ -37,10 +38,6 @@ async function main() {
           );
 
         const currentSelection = figma.currentPage.selection;
-
-        console.log("Target variables before swap: ", targetVariables);
-        console.log("Target collection ID: ", targetCollectionId);
-        console.log("Target collection name: ", message.target?.name);
 
         if (currentSelection.length > 0) {
           const selectedNode = currentSelection[0];
@@ -238,6 +235,5 @@ figma.on("selectionchange", async () => {
   }
 });
 
-figma.showUI(__html__, { themeColors: true, width: 240, height: 384 });
-console.clear();
+figma.showUI(__html__, { themeColors: true, width: 240, height: 400 });
 main();
