@@ -21,6 +21,17 @@
   --ramp-grey-900: #1e1e1e;
   --ramp-grey-1000: #111111;
 
+  --ramp-red-100: #fff5f5;
+  --ramp-red-200: #ffe2e0;
+  --ramp-red-300: #ffc7c2;
+  --ramp-red-400: #ffafa3;
+  --ramp-red-500: #f24822;
+  --ramp-red-600: #dc3412;
+  --ramp-red-700: #bd2915;
+  --ramp-red-800: #9f1f18;
+  --ramp-red-900: #771208;
+  --ramp-red-1000: #660e0b;
+
   --ramp-white-100: #ffffff0d;
   --ramp-white-200: #ffffff1a;
   --ramp-white-300: #ffffff33;
@@ -41,4 +52,26 @@
 .figma-dark:root {
   --color-bg-scrollbar: var(--ramp-white-400);
   --color-bg-scrollbar-hover: var(--ramp-white-500);
+
+  --ramp-pale-red-100: #faedeb;
+  --ramp-pale-red-200: #f8e5e2;
+  --ramp-pale-red-300: #f3cfc9;
+  --ramp-pale-red-400: #eba99d;
+  --ramp-pale-red-500: #d4583b;
+  --ramp-pale-red-600: #a55440;
+  --ramp-pale-red-700: #864537;
+  --ramp-pale-red-800: #60332a;
+  --ramp-pale-red-900: #412621;
+  --ramp-pale-red-1000: #1f1514;
+
+  --ramp-red-100: #fee7e7;
+  --ramp-red-200: #fccdca;
+  --ramp-red-300: #fbbcb6;
+  --ramp-red-400: #fca397;
+  --ramp-red-500: #e03e1a;
+  --ramp-red-600: #c4381c;
+  --ramp-red-700: #963323;
+  --ramp-red-800: #7c2622;
+  --ramp-red-900: #54211c;
+  --ramp-red-1000: #311817;
 }

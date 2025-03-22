@@ -93,18 +93,6 @@ function App() {
   }
 
   function handleSwap() {
-    // switch (selectionError) {
-    //   case "EMPTY":
-    //     setShowSelectionError("EMPTY");
-    //     return;
-    //   case "MULTIPLE":
-    //     setShowSelectionError("MULTIPLE");
-    //     return;
-    //   case "NO_VARIABLES":
-    //     setShowSelectionError("NO_VARIABLES");
-    //     return;
-    // }
-
     if (selectionError) {
       setShowSelectionError(selectionError);
       return;
@@ -130,7 +118,8 @@ function App() {
         <div className="collectionNameWrapper">
           <div
             className="collectionName"
-            data-invalid={selectionError !== false}
+            data-invalid={selectionError}
+            data-error={showSelectionError ? "true" : "false"}
           >
             {selectionError === "EMPTY" ? (
               <>
@@ -163,7 +152,20 @@ function App() {
             )}
           </div>
         </div>
-        {showSelectionError === "EMPTY" ? (
+        <div className="errorWrapper">
+          {showSelectionError && (
+            <strong className="error">
+              {showSelectionError === "EMPTY"
+                ? "Please select a frame."
+                : showSelectionError === "NO_VARIABLES"
+                  ? "Please select a frame containing color variables"
+                  : showSelectionError === "MULTIPLE"
+                    ? "Please select a single frame"
+                    : null}
+            </strong>
+          )}
+        </div>
+        {/* {showSelectionError === "EMPTY" ? (
           <strong className="error">Please select a frame.</strong>
         ) : showSelectionError === "NO_VARIABLES" ? (
           <strong className="error">
@@ -171,7 +173,7 @@ function App() {
           </strong>
         ) : showSelectionError === "MULTIPLE" ? (
           <strong className="error">Please select a single frame.</strong>
-        ) : null}
+        ) : null} */}
       </section>
       <form className="collections-list">
         <legend className="label">To</legend>
